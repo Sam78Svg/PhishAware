@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import "../Styling/employeeDashboard.css";
-import { Link } from "react-router-dom";
 import { apiFetch, getCurrentUser, logout } from "../../api.js";
 import {
     BsEnvelopeFill,
@@ -34,11 +33,11 @@ function EmployeeDashboard() {
 
     const fetchCount = async () => {
         try {
-            const res = await apiFetch(`${"/api/capturedUser"}`, {
+            const res = await apiFetch("/api/capturedUser", {
                 method: "POST",
                 body: JSON.stringify({})
             });
-            const data = await res.json();
+            const data = await res.json().catch(() => ({}));
             if (res.ok) setClickedMail(data.userCount || 0);
         } catch (err) {
             console.error(err);
@@ -62,6 +61,9 @@ function EmployeeDashboard() {
         if (!user?.name) return;
         fetchUserEmails();
         fetchCount();
+
+        const refreshTimer = window.setInterval(fetchCount, 5000);
+        return () => window.clearInterval(refreshTimer);
     }, [user]);
 
     const handleLogout = async () => {

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { BsSendFill } from "react-icons/bs";
+import { apiFetch, readJson } from "../../api.js";
 import "../Styling/chatBot.css";
 
 function ChatBot() {
@@ -22,13 +23,13 @@ function ChatBot() {
         setInput("");
 
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/chat`, {
+            const res = await apiFetch("/api/chat", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ message: userText })
             });
 
-            const data = await res.json();
+            const data = await readJson(res);
 
             // show bot reply
             setMessages(prev => [...prev, { role: "bot", text: data.reply }]);

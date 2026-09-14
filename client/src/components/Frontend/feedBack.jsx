@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import '../Styling/login.css';
+import { apiFetch } from "../../api.js";
 
 function FeedBack() {
     const [breached, setBreached] = useState(false);
@@ -11,7 +12,7 @@ function FeedBack() {
         e.preventDefault();
         // Simulate credential capture
         setBreached(true);
-        await fetch(`${import.meta.env.VITE_API_URL}/api/capture`, {
+        await apiFetch("/api/capture", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

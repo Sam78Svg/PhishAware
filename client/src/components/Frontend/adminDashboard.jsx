@@ -16,6 +16,7 @@ function AdminDashboard() {
     const [reports, setReports] = useState([]);
     const [reportsLoading, setReportsLoading] = useState(false);
     const [reportsError, setReportsError] = useState("");
+    const [expandedReportId, setExpandedReportId] = useState(null);
     const [activeTab, setActiveTab] = useState("create");
 
     // SEND CAMPAIGN STATES
@@ -78,16 +79,13 @@ function AdminDashboard() {
 
     //Send campaign Use Effect to fetch recipients based on selected group and page
     useEffect(() => {
-        if (!selectedGroup) return;
+        if (!selectedGroup || !user?.company_name) return;
 
-        console.log("SELECTED GROUP:", selectedGroup);
-        console.log("PAGINATION DEBUG: Fetching recipients with", { selectedGroup, page, limit, userCompany: user?.company_name });
         apiFetch(
-            `/api/recipients?group=${encodeURIComponent(selectedGroup)}&company=${encodeURIComponent(user?.company_name || "")}&page=${page}&limit=${limit}`
+            `/api/recipients?group=${encodeURIComponent(selectedGroup)}&company=${encodeURIComponent(user.company_name)}&page=${page}&limit=${limit}`
         )
             .then(res => res.json())
             .then(data => {
-                console.log("Fetched recipients:", data);
                 setRecipientList(data.data || []);
                 setTotal(data.total || 0);
             })
@@ -97,7 +95,7 @@ function AdminDashboard() {
                 setTotal(0);
             });
 
-    }, [selectedGroup, page, successLink, user]);
+    }, [selectedGroup, page, user]);
 
     // ================= FETCH TEMPLATES =================
     useEffect(() => {
@@ -155,7 +153,8 @@ function AdminDashboard() {
         e.preventDefault();
 
         // Create unique link FIRST
-        const generatedLink = `${import.meta.env.VITE_CLIENT_URL}/feedback/${Date.now()}`;
+        const clientUrl = (import.meta.env.VITE_CLIENT_URL || window.location.origin).replace(/\/+$/, "");
+        const generatedLink = `${clientUrl}/feedback/${Date.now()}`;
 
         try {
             // Save campaign
@@ -281,22 +280,30 @@ function AdminDashboard() {
             alert("Failed to delete reports");
         }
     }
-    const showReports = (index) => {
-        const allReports = document.getElementsByClassName("showReports");
+    const showReports = (reportId) => {
+        setExpandedReportId(currentId => currentId === reportId ? null : reportId);
+    };
 
-        const current = allReports[index];
+    const handleDownloadReport = async (report) => {
+        try {
+            const response = await apiFetch(`/api/reports/${report.id}/pdf`);
+            if (!response.ok) {
+                const data = await response.json().catch(() => ({}));
+                throw new Error(data.message || "Failed to download report");
+            }
 
-        // Check if already visible
-        const isVisible = current.style.display === "table-row";
-
-        // Hide all
-        for (let i = 0; i < allReports.length; i++) {
-            allReports[i].style.display = "none";
-        }
-
-        // If it was hidden before, show it
-        if (!isVisible) {
-            current.style.display = "table-row";
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const anchor = document.createElement("a");
+            anchor.href = url;
+            anchor.download = `${report.name || "campaign-report"}.pdf`;
+            document.body.appendChild(anchor);
+            anchor.click();
+            anchor.remove();
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error("Download report error:", err);
+            alert(err.message || "Failed to download report");
         }
     };
     // ================= Fetch Links =================
@@ -608,6 +615,7 @@ function AdminDashboard() {
                                             e.target.options[e.target.selectedIndex]
                                                 .getAttribute("targetG")
                                         );
+                                        setPage(1);
 
                                         setEmailTemplate(
                                             e.target.options[e.target.selectedIndex]
@@ -831,10 +839,10 @@ function AdminDashboard() {
                                     }}
                                 >
 
-                                    {recipientList.map((r, i) => (
+                                    {recipientList.map((r) => (
 
                                         <div
-                                            key={i}
+                                            key={r.employee_id}
                                             className="d-flex justify-content-between align-items-center mb-2 p-2 border-bottom"
                                         >
 
@@ -849,7 +857,7 @@ function AdminDashboard() {
                                                 onClick={() => {
 
                                                     setRecipientList(prev =>
-                                                        prev.filter((_, index) => index !== i)
+                                                        prev.filter(item => item.employee_id !== r.employee_id)
                                                     );
                                                 }}
                                             >
@@ -870,7 +878,7 @@ function AdminDashboard() {
 
                                 <button
                                     className="btn btn-secondary"
-                                    disabled={page === 1}
+                                    disabled={page <= 1}
                                     onClick={() => setPage(prev => prev - 1)}
                                 >
                                     ⬅ Prev
@@ -880,7 +888,7 @@ function AdminDashboard() {
 
                                 <button
                                     className="btn btn-secondary"
-                                    disabled={page * limit >= total}
+                                    disabled={page >= Math.ceil(total / limit)}
                                     onClick={() => setPage(prev => prev + 1)}
                                 >
                                     Next ➡
@@ -939,20 +947,24 @@ function AdminDashboard() {
                                 {Array.isArray(reports) &&
                                     !reportsLoading &&
                                     !reportsError &&
-                                    reports.map((r, i) => (
-                                        <>
-                                            <tr key={i} style={{ borderBottomColor: "none" }}>
+                                    reports.map((r) => (
+                                        <React.Fragment key={r.id}>
+                                            <tr style={{ borderBottomColor: "none" }}>
                                                 <td>{r.name}</td>
                                                 <td>{r.template_type}</td>
                                                 <td>{r.target_group}</td>
                                                 <td>{r.created_at}</td>
                                                 <td>
-                                                    <button className="btn btn-sm btn-outline-primary" onClick={() => showReports(i)}>
+                                                    <button className="btn btn-sm btn-outline-primary me-2" onClick={() => showReports(r.id)}>
                                                         View
+                                                    </button>
+                                                    <button className="btn btn-sm btn-outline-success" onClick={() => handleDownloadReport(r)}>
+                                                        Download
                                                     </button>
                                                 </td>
                                             </tr>
-                                            <tr className="showReports" style={{ display: "none", borderBottom: "2px solid #333" }}>
+                                            {expandedReportId === r.id && (
+                                            <tr className="showReports" style={{ borderBottom: "2px solid #333" }}>
                                                 <td colSpan={5}>
                                                     <div className="d-flex flex-wrap gap-3 py-2">
                                                         <span><span className="text-primary">Emails sent:</span> {r.email_sent ?? 0}</span>
@@ -966,7 +978,8 @@ function AdminDashboard() {
                                                     </div>
                                                 </td>
                                             </tr>
-                                        </>
+                                            )}
+                                        </React.Fragment>
                                     ))
                                 }
                             </tbody>

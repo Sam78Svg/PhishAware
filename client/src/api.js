@@ -1,5 +1,5 @@
-const API_URL = import.meta.env.VITE_BACKEND_URL || '';
-console.log(API_URL);
+const configuredApiUrl = import.meta.env.VITE_BACKEND_URL || '';
+const API_URL = (configuredApiUrl || (import.meta.env.DEV ? 'http://localhost:5000' : '')).replace(/\/+$/, '');
 
 export async function apiFetch(path, options = {}) {
     const headers = new Headers(options.headers || {});
@@ -21,10 +21,19 @@ export async function apiFetch(path, options = {}) {
     return response;
 }
 
+export async function readJson(response) {
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+        return {};
+    }
+
+    return response.json();
+}
+
 export async function getCurrentUser() {
     const response = await apiFetch('/api/auth/me');
     if (!response.ok) return null;
-    const data = await response.json();
+    const data = await readJson(response);
     return data.success ? data : null;
 }
 

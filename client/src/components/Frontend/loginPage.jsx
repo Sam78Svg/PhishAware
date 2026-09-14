@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { apiFetch } from "../../api.js";
+import { apiFetch, readJson } from "../../api.js";
 import {
     BsShieldCheck,
     BsGraphUpArrow,
@@ -37,7 +37,7 @@ function LoginPage() {
                 })
             });
 
-            const data = await res.json();
+            const data = await readJson(res);
             console.log("[login] response", { status: res.status, data });
 
             if (res.ok && data.success) {
