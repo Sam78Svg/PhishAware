@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:5000' || '';
+const API_URL = import.meta.env.VITE_BACKEND_URL || '';
 console.log(API_URL);
 
 export async function apiFetch(path, options = {}) {
