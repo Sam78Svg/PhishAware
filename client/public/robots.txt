@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Allow: /features
+Allow: /about
+Allow: /login
+Allow: /gemini
+Disallow: /admin
+Disallow: /employee
+Disallow: /feedback/
+
+Sitemap: https://phishaware.example.com/sitemap.xml

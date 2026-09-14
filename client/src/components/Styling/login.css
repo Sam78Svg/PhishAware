@@ -1,0 +1,111 @@
+.login-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #0f172a, #1e3a8a);
+    position: relative;
+    overflow: hidden;
+}
+
+.login-page::before {
+    content: "";
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 50%;
+    top: -100px;
+    right: -100px;
+    animation: floatSoft 10s ease-in-out infinite;
+}
+
+.login-page::after {
+    content: "";
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 50%;
+    bottom: -120px;
+    left: -100px;
+    animation: floatSoft 12s ease-in-out infinite reverse;
+}
+
+.login-modern-card {
+    border-radius: 25px;
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.97);
+    overflow: hidden;
+    position: relative;
+    z-index: 2;
+}
+
+.login-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #2563eb, #38bdf8);
+    color: white;
+    font-size: 2rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.form-control {
+    border-radius: 12px;
+    padding: 12px;
+    border: 1px solid #dbeafe;
+}
+
+.form-control:focus {
+    box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.2);
+    border-color: #2563eb;
+}
+
+.input-group-text {
+    border-radius: 12px 0 0 12px;
+    border: 1px solid #dbeafe;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #2563eb, #0ea5e9);
+    border: none;
+    padding: 12px;
+    font-weight: 600;
+    transition: 0.3s;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+}
+
+.login-left-content {
+    position: relative;
+    z-index: 2;
+}
+
+@media(max-width:768px) {
+
+    .login-modern-card {
+        border-radius: 20px;
+    }
+
+    .card-body {
+        padding: 2rem !important;
+    }
+}
+
+.form-check-input:checked {
+    background-color: #2563eb;
+    border-color: #2563eb;
+}
+
+.form-select {
+    border-radius: 12px;
+    padding: 12px;
+    border: 1px solid #dbeafe;
+}
+
+.form-select:focus {
+    box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.2);
+    border-color: #2563eb;
+}

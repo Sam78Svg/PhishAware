@@ -1,0 +1,95 @@
+.employee-dashboard {
+    min-height: 100vh;
+    background: #f1f5f9;
+}
+
+.dashboard-navbar {
+    background: linear-gradient(135deg, #0f172a, #1e3a8a);
+}
+
+.avatar-circle {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: #38bdf8;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.profile-avatar {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2563eb, #38bdf8);
+    color: white;
+    font-size: 2rem;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stat-card {
+    border-radius: 20px;
+    transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.mail-item {
+    cursor: pointer;
+    transition: 0.2s;
+    background: white;
+}
+
+.mail-item:hover {
+    background: #f8fafc;
+}
+
+.active-mail {
+    background: #dbeafe !important;
+}
+
+.mail-avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    color: white;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mail-content {
+    line-height: 1.8;
+    font-size: 1rem;
+}
+
+@media(max-width:768px) {
+
+    .dashboard-navbar h4 {
+        font-size: 1rem;
+    }
+
+    .mail-item {
+        padding: 1rem;
+    }
+}

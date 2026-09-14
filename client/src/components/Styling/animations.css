@@ -1,0 +1,264 @@
+/* ─── Motion tokens ─── */
+:root {
+  --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out-soft: cubic-bezier(0.33, 1, 0.68, 1);
+  --duration-fast: 0.25s;
+  --duration-normal: 0.45s;
+  --duration-slow: 0.75s;
+}
+
+/* ─── Keyframes ─── */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes floatSoft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.25); }
+  50% { box-shadow: 0 0 24px 4px rgba(56, 189, 248, 0.35); }
+}
+
+@keyframes progressFill {
+  from { width: 0; }
+}
+
+@keyframes navCollapseIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ─── Page route transition ─── */
+.page-enter {
+  animation: fadeIn var(--duration-normal) var(--ease-smooth);
+}
+
+.page-enter > *:first-child {
+  animation: fadeUp var(--duration-slow) var(--ease-smooth) both;
+}
+
+/* ─── Scroll reveal (JS toggles .reveal-visible) ─── */
+.reveal {
+  opacity: 0;
+  transform: translateY(32px);
+  transition:
+    opacity var(--duration-slow) var(--ease-smooth),
+    transform var(--duration-slow) var(--ease-smooth);
+  transition-delay: var(--reveal-delay, 0ms);
+  will-change: opacity, transform;
+}
+
+.reveal.reveal-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ─── Hero entrance ─── */
+.hero-animate > .hero-badge {
+  animation: fadeUp 0.7s var(--ease-smooth) 0.1s both;
+}
+
+.hero-animate > .hero-title {
+  animation: fadeUp 0.85s var(--ease-smooth) 0.2s both;
+}
+
+.hero-animate > .hero-subtitle {
+  animation: fadeUp 0.85s var(--ease-smooth) 0.35s both;
+}
+
+.hero-animate > .hero-actions {
+  animation: fadeUp 0.85s var(--ease-smooth) 0.5s both;
+}
+
+.hero-image-enter {
+  animation: fadeUp 1s var(--ease-smooth) 0.25s both;
+}
+
+.hero-image-float {
+  animation: floatSoft 5s ease-in-out 1.2s infinite;
+  will-change: transform;
+}
+
+/* ─── Staggered children ─── */
+.stagger-grid > [class*="col"] {
+  opacity: 0;
+  animation: fadeUp 0.65s var(--ease-smooth) forwards;
+}
+
+.stagger-grid > [class*="col"]:nth-child(1) { animation-delay: 0.08s; }
+.stagger-grid > [class*="col"]:nth-child(2) { animation-delay: 0.16s; }
+.stagger-grid > [class*="col"]:nth-child(3) { animation-delay: 0.24s; }
+.stagger-grid > [class*="col"]:nth-child(4) { animation-delay: 0.32s; }
+.stagger-grid > [class*="col"]:nth-child(5) { animation-delay: 0.4s; }
+.stagger-grid > [class*="col"]:nth-child(6) { animation-delay: 0.48s; }
+
+/* ─── Cards & interactive ─── */
+.animate-card {
+  transition:
+    transform var(--duration-normal) var(--ease-smooth),
+    box-shadow var(--duration-normal) var(--ease-smooth);
+}
+
+.animate-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(37, 99, 235, 0.12);
+}
+
+.animate-card .feature-icon {
+  transition: transform var(--duration-normal) var(--ease-smooth);
+}
+
+.animate-card:hover .feature-icon {
+  transform: scale(1.08) rotate(-3deg);
+}
+
+/* ─── Buttons ─── */
+.btn-animate {
+  transition:
+    transform var(--duration-fast) var(--ease-smooth),
+    box-shadow var(--duration-fast) var(--ease-smooth),
+    background var(--duration-fast) ease;
+}
+
+.btn-animate:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25);
+}
+
+.btn-animate:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* ─── Login ─── */
+.login-card-enter {
+  animation: scaleIn 0.7s var(--ease-smooth) both;
+}
+
+.login-orb {
+  animation: floatSoft 8s ease-in-out infinite;
+}
+
+/* ─── Dashboard ─── */
+.dashboard-panel-enter {
+  animation: fadeUp 0.55s var(--ease-smooth) both;
+}
+
+.tab-content-enter {
+  animation: fadeUp 0.4s var(--ease-smooth) both;
+}
+
+.stat-card-animate {
+  transition: transform var(--duration-normal) var(--ease-smooth), box-shadow var(--duration-normal) var(--ease-smooth);
+}
+
+.stat-card-animate:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.1);
+}
+
+.mail-item {
+  transition:
+    background-color var(--duration-fast) ease,
+    transform var(--duration-fast) var(--ease-smooth),
+    padding-left var(--duration-fast) var(--ease-smooth);
+}
+
+.mail-item:hover {
+  transform: translateX(4px);
+}
+
+.progress-bar {
+  transition: width 1s var(--ease-smooth);
+}
+
+/* ─── Navbar mobile menu ─── */
+.navbar-collapse.show {
+  animation: navCollapseIn 0.35s var(--ease-smooth) both;
+}
+
+/* ─── Modals ─── */
+#modal-body {
+  animation: fadeIn 0.3s var(--ease-smooth);
+}
+
+#modal-content {
+  animation: scaleIn 0.4s var(--ease-smooth) both;
+}
+
+/* ─── Chatbot ─── */
+.chatbot-float {
+  animation: floatSoft 4s ease-in-out infinite;
+}
+
+/* ─── Section titles ─── */
+.section-title-animate {
+  animation: fadeUp 0.7s var(--ease-smooth) both;
+}
+
+.mainArea {
+  animation: fadeUp 0.5s var(--ease-smooth) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
