@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { apiFetch, readJson } from "../../api.js";
+import { apiFetch, readJson, setAuthToken } from "../../api.js";
 import {
     BsShieldCheck,
     BsGraphUpArrow,
@@ -38,9 +38,8 @@ function LoginPage() {
             });
 
             const data = await readJson(res);
-            console.log("[login] response", { status: res.status, data });
-
             if (res.ok && data.success) {
+                setAuthToken(data.token);
                 setLoginPassword("");
 
                 if (data.type === "admin") {

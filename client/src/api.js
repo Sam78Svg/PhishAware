@@ -1,8 +1,14 @@
 const configuredApiUrl = import.meta.env.VITE_BACKEND_URL || '';
 const API_URL = (configuredApiUrl || (import.meta.env.DEV ? 'http://localhost:5000' : '')).replace(/\/+$/, '');
+const AUTH_TOKEN_KEY = 'phishaware_auth_token';
 
 export async function apiFetch(path, options = {}) {
     const headers = new Headers(options.headers || {});
+    const token = sessionStorage.getItem(AUTH_TOKEN_KEY);
+
+    if (token && !headers.has('Authorization')) {
+        headers.set('Authorization', `Bearer ${token}`);
+    }
 
     if (options.body && !headers.has('Content-Type')) {
         headers.set('Content-Type', 'application/json');
@@ -15,6 +21,7 @@ export async function apiFetch(path, options = {}) {
     });
 
     if (response.status === 401) {
+        sessionStorage.removeItem(AUTH_TOKEN_KEY);
         window.dispatchEvent(new Event('auth:expired'));
     }
 
@@ -39,6 +46,11 @@ export async function getCurrentUser() {
 
 export async function logout() {
     await apiFetch('/api/auth/logout', { method: 'POST' });
+    sessionStorage.removeItem(AUTH_TOKEN_KEY);
+}
+
+export function setAuthToken(token) {
+    if (token) sessionStorage.setItem(AUTH_TOKEN_KEY, token);
 }
 
 export { API_URL };

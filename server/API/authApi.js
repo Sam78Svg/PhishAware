@@ -86,6 +86,7 @@ router.post('/login', async (req, res) => {
 
             return res.json({
                 success: true,
+                token,
                 type: 'admin',
                 username: admin.username,
                 role: admin.role,
@@ -122,6 +123,7 @@ router.post('/login', async (req, res) => {
 
         return res.json({
             success: true,
+            token,
             type: 'employee',
             name: employee.name,
             email: employee.email,

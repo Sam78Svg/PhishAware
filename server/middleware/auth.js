@@ -43,10 +43,15 @@ export function clearAuthCookie(res) {
 
 export function requireAuth(req, res, next) {
     try {
-        const token = req.cookies?.[COOKIE_NAME];
+        const cookieToken = req.cookies?.[COOKIE_NAME];
+        const authorization = req.get('authorization') || '';
+        const bearerToken = authorization.startsWith('Bearer ')
+            ? authorization.slice('Bearer '.length)
+            : '';
+        const token = cookieToken || bearerToken;
 
         if (!token) {
-            console.warn('[auth] request rejected: auth cookie missing', { method: req.method, path: req.path });
+            console.warn('[auth] request rejected: auth credentials missing', { method: req.method, path: req.path });
             return res.status(401).json({ success: false, message: 'Authentication required' });
         }
 

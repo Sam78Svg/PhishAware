@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="PhishAware">
+  <rect width="32" height="32" rx="8" fill="#0f172a"/>
+  <path fill="#38bdf8" d="M16 6l8 4v6c0 5-3.5 9.5-8 10-4.5-.5-8-5-8-10v-6l8-4z"/>
+  <path fill="#fff" d="M14 14h4v2h-4v-2zm0 4h4v2h-4v-2z"/>
+</svg>
