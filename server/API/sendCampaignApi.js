@@ -62,8 +62,15 @@ router.get('/recipients', ...adminOnly, async (req, res) => {
 router.post('/capturedUser', ...employeeOnly, async (req, res) => {
     try {
         const result = await db.query(
-            'SELECT COUNT(*)::int AS count FROM tracking WHERE username = $1',
-            [req.auth.type === 'employee' ? (await getEmployeeName(req.auth.userId)) : req.body.username]
+            `SELECT COUNT(*)::int AS count
+             FROM tracking t
+             WHERE LOWER(t.email) = LOWER((
+                 SELECT email FROM employees WHERE employee_id = $1
+             ))
+                OR LOWER(t.username) = LOWER((
+                 SELECT name FROM employees WHERE employee_id = $1
+             ))`,
+            [req.auth.userId]
         );
         res.json({ userCount: result.rows[0].count });
     } catch (err) {
@@ -71,11 +78,6 @@ router.post('/capturedUser', ...employeeOnly, async (req, res) => {
         res.status(500).json({ message: 'Database error' });
     }
 });
-
-async function getEmployeeName(employeeId) {
-    const result = await db.query('SELECT name FROM employees WHERE employee_id = $1 LIMIT 1', [employeeId]);
-    return result.rows[0]?.name || '';
-}
 
 router.post('/fetchEmail', ...employeeOnly, async (req, res) => {
     try {

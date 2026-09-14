@@ -16,9 +16,12 @@
 4. Copy `server/.env.example` to `server/.env`.
 5. Set `DATABASE_URL` to your Supabase PostgreSQL connection string.
 6. Set `JWT_SECRET` to a long random secret.
-7. Set `CLIENT_URL=http://localhost:5173` for local development.
+7. Set `CLIENT_URL=http://localhost:5173` for local development. For Render production, set it to the Vercel URL without a trailing slash. Set `NODE_ENV=production` on Render so the cross-site JWT cookie is secure.
 8. Install dependencies from the project root with `npm install`.
-9. Start backend with `npm run server` and frontend with `npm run dev`.
+9. Start the backend with `npm run server` and the frontend with `npm run dev`.
+10. For local development, leave `VITE_BACKEND_URL` unset; Vite proxies `/api` to `http://localhost:5000`.
+11. In Vercel, set `VITE_BACKEND_URL` to the deployed Render backend URL, including `https://` and without a trailing slash, then redeploy.
+12. Vite reads frontend environment files from `client/`, not `client/src/`; use `client/.env.example` as the template.
 
 ## Important
 Do not commit `server/.env` or any API/email/Twilio credentials. Rotate credentials if they have already been exposed.
