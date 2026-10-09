@@ -10,11 +10,15 @@ router.post('/save_report', ...adminOnly, async (req, res) => {
     const { campaign_id, email, clicked = false, submitted = false } = req.body;
 
     try {
-        await db.query(
+        const result = await db.query(
             `INSERT INTO reports (campaign_id, email, clicked, submitted)
-             VALUES ($1, $2, $3, $4)`,
-            [campaign_id, email, Boolean(clicked), Boolean(submitted)]
+             SELECT c.id, $2, $3, $4 FROM campaigns c
+             WHERE c.id = $1
+               AND c.company_name = (SELECT company_name FROM admins WHERE admin_id = $5)
+             RETURNING campaign_id`,
+            [campaign_id, email, Boolean(clicked), Boolean(submitted), req.auth.userId]
         );
+        if (!result.rows.length) return res.status(404).json({ message: 'Campaign not found for this company' });
         res.json({ success: true });
     } catch (err) {
         console.error(err);
@@ -36,15 +40,15 @@ router.get('/reports', ...adminOnly, async (req, res) => {
                 COALESCE(stats.submitted_count, 0)::int AS reported
             FROM campaigns c
             LEFT JOIN (
-                SELECT campaign_name,
+                SELECT campaign_id, campaign_name, company_name,
                        COUNT(*) FILTER (WHERE submitted::text IN ('1', 'true', 't')) AS submitted_count
                 FROM tracking
-                GROUP BY campaign_name
-            ) stats ON stats.campaign_name = c.name
+                GROUP BY campaign_id, campaign_name, company_name
+            ) stats ON (stats.campaign_id = c.id OR
+                        (stats.campaign_id IS NULL AND stats.campaign_name = c.name))
+                    AND stats.company_name = c.company_name
             WHERE c.company_name = (
-                SELECT company_name
-                FROM admins
-                WHERE admin_id = $1
+                SELECT company_name FROM admins WHERE admin_id = $1
             )
             ORDER BY c.created_at DESC
         `, [req.auth.userId]);
@@ -65,11 +69,13 @@ router.get('/reports/:campaignId/pdf', ...adminOnly, async (req, res) => {
                     COALESCE(stats.submitted_count, 0)::int AS reported
              FROM campaigns c
              LEFT JOIN (
-                 SELECT campaign_name,
+                 SELECT campaign_id, campaign_name, company_name,
                         COUNT(*) FILTER (WHERE submitted::text IN ('1', 'true', 't')) AS submitted_count
                  FROM tracking
-                 GROUP BY campaign_name
-             ) stats ON stats.campaign_name = c.name
+                 GROUP BY campaign_id, campaign_name, company_name
+             ) stats ON (stats.campaign_id = c.id OR
+                         (stats.campaign_id IS NULL AND stats.campaign_name = c.name))
+                     AND stats.company_name = c.company_name
              WHERE c.id = $1
                AND c.company_name = (
                    SELECT company_name FROM admins WHERE admin_id = $2
@@ -113,7 +119,7 @@ router.get('/reports/:campaignId/pdf', ...adminOnly, async (req, res) => {
             .text(`Created: ${new Date(campaign.created_at).toLocaleString()}`)
             .text(`Emails sent: ${campaign.email_sent ?? 0}`)
             .text(`Clicked: ${campaign.clicked ?? 0}`)
-            .text(`Submitted credentials: ${campaign.reported ?? 0}`)
+            .text(`Submitted forms: ${campaign.reported ?? 0}`)
             .text(`Recipients: ${recipientsResult.rows.length}`);
         document.moveDown();
         document.fontSize(13).text('Recipients', { underline: true });
@@ -143,15 +149,7 @@ router.delete('/clear_reports', ...adminOnly, async (req, res) => {
     try {
         await db.query(
             `DELETE FROM campaigns
-             WHERE admin_id IN (
-                 SELECT admin_id
-                 FROM admins
-                 WHERE company_name = (
-                     SELECT company_name
-                     FROM admins
-                     WHERE admin_id = $1
-                 )
-             )`,
+             WHERE company_name = (SELECT company_name FROM admins WHERE admin_id = $1)`,
             [req.auth.userId]
         );
         res.json({ message: 'All reports cleared successfully' });
@@ -163,11 +161,12 @@ router.delete('/clear_reports', ...adminOnly, async (req, res) => {
 
 // Public by design: this endpoint represents the simulated phishing landing page.
 // It records the event but NEVER stores the submitted password.
-router.post('/capture', async (req, res) => {
+router.post('/capture/:campaignId', async (req, res) => {
     const { username } = req.body;
+    const campaignId = Number.parseInt(req.params.campaignId, 10);
 
-    if (!username) {
-        return res.status(400).json({ success: false, message: 'Username required' });
+    if (!username || !Number.isInteger(campaignId) || campaignId < 1) {
+        return res.status(400).json({ success: false, message: 'A valid campaign and username are required' });
     }
 
     try {
@@ -175,8 +174,9 @@ router.post('/capture', async (req, res) => {
             `SELECT employee_id, name, email, department, company_name
              FROM employees
              WHERE LOWER(name) = LOWER($1)
+               AND company_name = (SELECT company_name FROM campaigns WHERE id = $2)
              LIMIT 1`,
-            [username]
+            [username, campaignId]
         );
 
         if (!userResult.rows.length) {
@@ -187,10 +187,11 @@ router.post('/capture', async (req, res) => {
 
         const campaignResult = await db.query(
             `SELECT * FROM campaigns
-             WHERE target_group = $1
-             ORDER BY created_at DESC
+             WHERE id = $1
+               AND target_group = $2
+               AND company_name = $3
              LIMIT 1`,
-            [user.department]
+            [campaignId, user.department, user.company_name]
         );
 
         if (!campaignResult.rows.length) {
@@ -225,14 +226,16 @@ router.post('/capture', async (req, res) => {
 
         await db.query(
             `INSERT INTO tracking
-             (username, email, clicked, submitted, campaign_name)
-             VALUES ($1, $2, $3, $4, $5)`,
+             (username, email, clicked, submitted, campaign_name, company_name, campaign_id)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
             [
                 user.name,
                 user.email,
                 trackingClickedValue ? true : 1,
                 trackingSubmittedValue ? true : 1,
                 campaign.name,
+                campaign.company_name,
+                campaign.id,
             ]
         );
 
@@ -242,6 +245,12 @@ router.post('/capture', async (req, res) => {
         return res.status(500).json({ success: false, message: 'Database error' });
     }
 });
+
+// Keep old feedback links from selecting a campaign by department alone.
+router.post('/capture', (req, res) => res.status(400).json({
+    success: false,
+    message: 'This feedback link is incomplete. Please use the link from your campaign.',
+}));
 
 // Compatibility endpoint for existing frontend code. Authenticated only.
 router.post('/userExist', requireAuth, async (req, res) => {

@@ -15,8 +15,30 @@ router.post('/send_campaign', ...adminOnly, async (req, res) => {
     }
 
     try {
-        if (mode === 'sms') await sendSMS(recipients, link);
-        else if (mode === 'email') await sendEmail(recipients, link);
+        const linkedCampaignId = Number(link.match(/\/feedback\/(\d+)(?:\/|$)/)?.[1]);
+        if (!Number.isInteger(linkedCampaignId) || linkedCampaignId < 1) {
+            return res.status(400).json({ message: 'Link must belong to a saved campaign.' });
+        }
+        const campaign = await db.query(
+            `SELECT id FROM campaigns
+             WHERE id = $1 AND company_name = (
+                 SELECT company_name FROM admins WHERE admin_id = $2
+             )`,
+            [linkedCampaignId, req.auth.userId]
+        );
+        if (!campaign.rows.length) return res.status(404).json({ message: 'Campaign not found for this company.' });
+
+        const allowedRecipients = await db.query(
+            `SELECT email FROM employees
+             WHERE company_name = (SELECT company_name FROM admins WHERE admin_id = $1)
+               AND email = ANY($2::text[])`,
+            [req.auth.userId, recipients]
+        );
+        const authorizedEmails = allowedRecipients.rows.map(row => row.email);
+        if (!authorizedEmails.length) return res.status(400).json({ message: 'No recipients belong to this company.' });
+
+        if (mode === 'sms') await sendSMS(authorizedEmails, link);
+        else if (mode === 'email') await sendEmail(authorizedEmails, link);
         else return res.status(400).json({ message: 'Unsupported send mode.' });
 
         res.json({ message: 'Campaign link sent successfully.' });
@@ -27,7 +49,7 @@ router.post('/send_campaign', ...adminOnly, async (req, res) => {
 });
 
 router.get('/recipients', ...adminOnly, async (req, res) => {
-    let { group, company, page, limit = 20 } = req.query;
+    let { group, page, limit = 20 } = req.query;
     page = Number.parseInt(page) || 1;
     limit = Number.parseInt(limit);
 
@@ -39,17 +61,19 @@ router.get('/recipients', ...adminOnly, async (req, res) => {
     try {
         const count = await db.query(
             `SELECT COUNT(*)::int AS total FROM employees
-             WHERE department = $1 AND company_name = $2`,
-            [group, company || '']
+             WHERE department = $1
+               AND company_name = (SELECT company_name FROM admins WHERE admin_id = $2)`,
+            [group, req.auth.userId]
         );
 
         const data = await db.query(
             `SELECT employee_id, name, email, department, company_name
              FROM employees
-             WHERE department = $1 AND company_name = $2
+             WHERE department = $1
+               AND company_name = (SELECT company_name FROM admins WHERE admin_id = $2)
              ORDER BY employee_id
              LIMIT $3 OFFSET $4`,
-            [group, company || '', limit, (page - 1) * limit]
+            [group, req.auth.userId, limit, (page - 1) * limit]
         );
 
         res.json({ data: data.rows, total: count.rows[0].total });
@@ -64,12 +88,13 @@ router.post('/capturedUser', ...employeeOnly, async (req, res) => {
         const result = await db.query(
             `SELECT COUNT(*)::int AS count
              FROM tracking t
-             WHERE LOWER(t.email) = LOWER((
-                 SELECT email FROM employees WHERE employee_id = $1
-             ))
-                OR LOWER(t.username) = LOWER((
+             WHERE (
+                 LOWER(t.email) = LOWER((SELECT email FROM employees WHERE employee_id = $1))
+                 OR LOWER(t.username) = LOWER((
                  SELECT name FROM employees WHERE employee_id = $1
-             ))`,
+                 ))
+             )
+               AND t.company_name = (SELECT company_name FROM employees WHERE employee_id = $1)`,
             [req.auth.userId]
         );
         res.json({ userCount: result.rows[0].count });
@@ -92,9 +117,9 @@ router.post('/fetchEmail', ...employeeOnly, async (req, res) => {
 
         const campaigns = await db.query(
             `SELECT * FROM campaigns
-             WHERE target_group = $1
+             WHERE target_group = $1 AND company_name = $2
              ORDER BY created_at DESC`,
-            [user.department]
+            [user.department, user.company_name]
         );
 
         const mails = [];
@@ -102,16 +127,18 @@ router.post('/fetchEmail', ...employeeOnly, async (req, res) => {
 
         for (const campaign of campaigns.rows) {
             const templateData = await db.query(
-                'SELECT content FROM templates WHERE name = $1 LIMIT 1',
-                [campaign.template_type]
+                `SELECT content FROM templates
+                 WHERE name = $1 AND company_name = $2
+                 LIMIT 1`,
+                [campaign.template_type, user.company_name]
             );
             if (!templateData.rows.length) continue;
 
             const linkData = await db.query(
                 `SELECT * FROM links
-                 WHERE target_group = $1 AND template_type = $2
+                 WHERE target_group = $1 AND template_type = $2 AND company_name = $3
                  ORDER BY link_id DESC LIMIT 1`,
-                [user.department, campaign.template_type]
+                [user.department, campaign.template_type, user.company_name]
             );
 
             const template = templateData.rows[0].content || '';

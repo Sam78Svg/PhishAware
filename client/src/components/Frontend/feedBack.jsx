@@ -1,24 +1,39 @@
 import React, { useState } from "react";
+import { useParams } from "react-router-dom";
 import '../Styling/login.css';
 import { apiFetch } from "../../api.js";
 
 function FeedBack() {
+    const { id, type = "generic" } = useParams();
     const [breached, setBreached] = useState(false);
     const [username, setUsername] = useState("");
-    const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
+    const pageType = ["generic", "google", "microsoft"].includes(type) ? type : "generic";
+    const page = {
+        generic: { brand: "Awareness Portal", icon: "🔐", title: "Sign in to continue", button: "Continue", color: "#0d6efd" },
+        google: { brand: "Google", icon: "G", title: "Sign in with Google", button: "Next", color: "#4285f4" },
+        microsoft: { brand: "Microsoft", icon: "▦", title: "Sign in", button: "Next", color: "#5e5e5e" },
+    }[pageType];
 
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        // Simulate credential capture
-        setBreached(true);
-        await apiFetch("/api/capture", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ username, password }),
-        });
+        setError("");
+        try {
+            const response = await apiFetch(`/api/capture/${encodeURIComponent(id)}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username }),
+            });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                setError(result.message || "This simulation link is no longer available.");
+                return;
+            }
+            setBreached(true);
+        } catch {
+            setError("Unable to reach the awareness service. Please try again.");
+        }
     };
 
 
@@ -51,12 +66,11 @@ function FeedBack() {
                         </div>
 
                         <h1 className="fw-bold mb-3">
-                            Privacy Breached
+                            Simulation complete
                         </h1>
 
                         <p className="lead mb-4">
-                            Your credentials were captured during this
-                            phishing awareness simulation.
+                            You followed a simulated phishing link. No password was collected. Learn to verify links and sign-in pages before entering information.
                         </p>
 
                         <div
@@ -65,9 +79,7 @@ function FeedBack() {
                                 background: "rgba(255,255,255,0.1)",
                             }}
                         >
-                            <strong>
-                                Never enter credentials on suspicious links or websites.
-                            </strong>
+                            <strong>Check the sender, destination URL, and unexpected requests before signing in.</strong>
                         </div>
                     </div>
                 </div>
@@ -98,20 +110,20 @@ function FeedBack() {
                                     width: "70px",
                                     height: "70px",
                                     borderRadius: "50%",
-                                    background: "#0d6efd",
+                                    background: page.color,
                                     color: "#fff",
                                     fontSize: "30px",
                                 }}
                             >
-                                🔐
+                                {page.icon}
                             </div>
 
                             <h2 className="fw-bold">
-                                Awareness Portal
+                                {page.brand}
                             </h2>
 
                             <p className="text-muted">
-                                Sign in to continue
+                                {page.title}
                             </p>
                         </div>
 
@@ -137,32 +149,14 @@ function FeedBack() {
                                 />
                             </div>
 
-                            <div className="mb-4">
-                                <label
-                                    htmlFor="fake-password"
-                                    className="form-label fw-semibold"
-                                >
-                                    Password
-                                </label>
-
-                                <input
-                                    type="password"
-                                    className="form-control form-control-lg"
-                                    id="fake-password"
-                                    placeholder="Enter password"
-                                    value={password}
-                                    onChange={(e) =>
-                                        setPassword(e.target.value)
-                                    }
-                                    required
-                                />
-                            </div>
+                            {error && <div className="alert alert-danger" role="alert">{error}</div>}
 
                             <button
                                 type="submit"
                                 className="btn btn-primary btn-lg w-100"
+                                style={{ backgroundColor: page.color, borderColor: page.color }}
                             >
-                                Login
+                                {page.button}
                             </button>
                         </form>
 

@@ -52,6 +52,7 @@ function App() {
             <Route path="/employee" element={<ProtectedRoute role="employee"><AnimatedPage><EmployeeDashboard /></AnimatedPage></ProtectedRoute>} />
             <Route path="/gemini" element={<AnimatedPage><Gemini /></AnimatedPage>} />
             <Route path="/feedback/:id" element={<AnimatedPage><FeedBack /></AnimatedPage>} />
+            <Route path="/feedback/:id/:type" element={<AnimatedPage><FeedBack /></AnimatedPage>} />
             <Route path="/about" element={<AnimatedPage><AboutPage /></AnimatedPage>} />
             <Route path="/features" element={<AnimatedPage><FeaturePage /></AnimatedPage>} />
           </Routes>

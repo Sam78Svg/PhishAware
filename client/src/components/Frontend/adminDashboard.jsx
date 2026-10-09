@@ -8,6 +8,7 @@ function AdminDashboard() {
 
     // CAMPAIGN CREATION STATES
     const [campaignName, setCampaignName] = useState("");
+    const [feedbackPageType, setFeedbackPageType] = useState("generic");
     const [emailTemplate, setEmailTemplate] = useState("");
     const [targetGroup, setTargetGroup] = useState("All Employees");
     const [successLink, setSuccessLink] = useState("");
@@ -152,9 +153,7 @@ function AdminDashboard() {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Create unique link FIRST
         const clientUrl = (import.meta.env.VITE_CLIENT_URL || window.location.origin).replace(/\/+$/, "");
-        const generatedLink = `${clientUrl}/feedback/${Date.now()}`;
 
         try {
             // Save campaign
@@ -165,7 +164,7 @@ function AdminDashboard() {
                     campaign_name: campaignName,
                     email_template: emailTemplate,
                     target_group: targetGroup,
-                    company_name: user?.company_name || "",
+                    feedback_page_type: feedbackPageType,
                 })
             });
 
@@ -174,6 +173,8 @@ function AdminDashboard() {
             if (!response.ok) {
                 return alert(data.message || "Failed to save campaign");
             }
+
+            const generatedLink = `${clientUrl}/feedback/${data.campaign.id}/${feedbackPageType}`;
 
             //Save link ONLY if campaign saved
             const savedLinkRes = await apiFetch(`/api/saveLink`, {
@@ -442,7 +443,7 @@ function AdminDashboard() {
                                 </option>
 
                                 {templates.map(t => (
-                                    <option key={t.id} name={t.name} value={t.value}>
+                                    <option key={t.id} value={t.name}>
                                         {t.name}
                                     </option>
                                 ))}
@@ -459,6 +460,18 @@ function AdminDashboard() {
                                 {targetGroups.map((g, i) => (
                                     <option key={i} value={g}>{g}</option>
                                 ))}
+                            </select>
+
+                            <label className="form-label fw-semibold" htmlFor="feedback-page-type">Feedback page</label>
+                            <select
+                                id="feedback-page-type"
+                                value={feedbackPageType}
+                                onChange={e => setFeedbackPageType(e.target.value)}
+                                className="form-control mb-3"
+                            >
+                                <option value="generic">Security awareness</option>
+                                <option value="google">Google sign-in style</option>
+                                <option value="microsoft">Microsoft sign-in style</option>
                             </select>
 
                             <button className="btn btn-success">Launch</button>
@@ -969,7 +982,7 @@ function AdminDashboard() {
                                                     <div className="d-flex flex-wrap gap-3 py-2">
                                                         <span><span className="text-primary">Emails sent:</span> {r.email_sent ?? 0}</span>
                                                         <span><span className="text-danger">Clicked:</span> {r.clicked ?? 0}</span>
-                                                        <span><span className="text-success">Submitted credentials:</span> {r.reported ?? 0}</span>
+                                                        <span><span className="text-success">Submitted forms:</span> {r.reported ?? 0}</span>
                                                         <span><span className="text-info">Vulnerability rate:</span>{" "}
                                                             {r.email_sent > 0
                                                                 ? `${((Number(r.clicked) / Number(r.email_sent)) * 100).toFixed(2)}%`
