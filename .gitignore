@@ -13,6 +13,7 @@
 
 # DB structure
 DB_Structure/
+/database
 
 # misc
 .DS_Store

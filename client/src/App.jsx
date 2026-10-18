@@ -1,5 +1,7 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { SpeedInsights } from "@vercel/speed-insights/react";
+import { Analytics } from "@vercel/analytics/react";
 import SiteNavbar from "./components/Frontend/SiteNavbar";
 import AnimatedPage from "./components/Frontend/AnimatedPage";
 import RouteFallback from "./components/Frontend/RouteFallback";
@@ -39,9 +41,19 @@ const FeedBack = lazy(() => import("./components/Frontend/feedBack"));
 const AboutPage = lazy(() => import("./components/Frontend/aboutPage"));
 const FeaturePage = lazy(() => import("./components/Frontend/featurePage"));
 
+function VercelMonitoring() {
+  return (
+    <>
+      <Analytics />
+      <SpeedInsights />
+    </>
+  );
+}
+
 function App() {
   return (
     <Router>
+      <VercelMonitoring />
       <SiteNavbar />
       <main id="main-content">
         <Suspense fallback={<RouteFallback />}>
