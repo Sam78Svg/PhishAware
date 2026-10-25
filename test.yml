@@ -1,0 +1,42 @@
+config:
+  # Replace with your Vercel preview/staging URL
+  target: "https://phish-aware-red.vercel.app/login"
+  pool: 1000 
+  
+  phases:
+    # - duration: 60    # Phase 1: Warm up your cache & serverless functions
+    #   arrivalRate: 10
+    #   rampTo: 100
+    #   name: "1. Gentle Warmup (10 -> 100 users/sec)"
+
+    # - duration: 120   # Phase 2: Moderate heavy traffic
+    #   arrivalRate: 100
+    #   rampTo: 500
+    #   name: "2. Heavy Ramp-Up (100 -> 500 users/sec)"
+
+    # - duration: 180   # Phase 3: Target Peak Load
+    #   arrivalRate: 500
+    #   rampTo: 1000
+    #   name: "3. Peak Scale (500 -> 1000 users/sec)"
+
+    - duration: 60    # Phase 4: Sustained torture test
+      arrivalRate: 400
+      rampTo: 500
+      name: "4. Holding Peak (Sustained 2,000 users/sec)"
+
+  defaults:
+    headers:
+      # CRITICAL: You MUST set this in Vercel Dashboard -> Settings -> Firewall
+      # and put the matching token here, otherwise Vercel Edge blocks you at ~50 reqs/sec.
+      x-vercel-protection-bypass: "your-secret-bypass-token-here"
+      User-Agent: "ArtilleryHighLoadTest/2.0"
+      Connection: "keep-alive"
+
+scenarios:
+  - name: "High-Volume Traffic Simulation"
+    flow:
+      - get:
+          url: "/"
+      - think: 1 # Brief pause before the next action
+      - get:
+          url: "/api/hello" # Ensure your serverless functions/database can handle this
