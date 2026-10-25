@@ -1,0 +1,14 @@
+-- Install artilary for testing
+# npm install -g artillery@latest
+
+-- Check Installation 
+# artillery version
+
+-- to start the Test use: 
+#    artillery run test.yml
+
+-- to stat the test and record:
+# artillery run test.yml --record --key your_artilary_key
+
+-- to get test report use:
+# https://app.artillery.io follow the link to get test report in your artilary account
