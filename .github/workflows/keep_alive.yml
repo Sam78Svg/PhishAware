@@ -1,0 +1,53 @@
+name: Keep Supabase Database Alive (Direct DB Connection)
+
+on:
+  schedule:
+    # Runs at 00:00 UTC every 4 days
+    - cron: '0 0 */4 * *'
+  workflow_dispatch: # Allows manual triggering from the GitHub Actions tab
+
+jobs:
+  ping_db:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pg driver
+        run: npm install pg
+
+      - name: Execute keep-alive query
+        env:
+          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          node -e "
+          const { Client } = require('pg');
+          
+          async function run() {
+            const client = new Client({
+              connectionString: process.env.DATABASE_URL,
+              ssl: { rejectUnauthorized: false } // Required for Supabase connections
+            });
+            
+            try {
+              await client.connect();
+              console.log('Successfully connected to Supabase.');
+              
+              const res = await client.query('SELECT NOW() AS current_time;');
+              console.log('Database Ping Successful! Server Time:', res.rows[0].current_time);
+            } catch (err) {
+              console.error('Database connection failed:', err.message);
+              process.exit(1);
+            } finally {
+              await client.end();
+            }
+          }
+          
+          run();
+          "
